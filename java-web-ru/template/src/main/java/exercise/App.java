@@ -7,6 +7,7 @@ import exercise.model.User;
 import exercise.dto.users.UserPage;
 import exercise.dto.users.UsersPage;
 import java.util.Collections;
+import java.util.stream.Collectors;
 
 public final class App {
 
@@ -20,17 +21,25 @@ public final class App {
         });
 
         // BEGIN
+        app.get("/users/{id}", ctx -> {
+            var id = ctx.pathParamAsClass("id", Long.class).get();
+            User user = USERS.stream()
+                    .filter(u -> id.equals(u.getId()))
+                    .findFirst()
+                    .orElse(null);
+
+            if (user == null) {
+                throw new NotFoundResponse("User not found");
+            }
+
+            var page = new UserPage(user);
+            ctx.render("users/show.jte", Collections.singletonMap("page", page));
+        });
+
         app.get("/users", ctx -> {
             var page = new UsersPage(USERS);
             ctx.render("users/index.jte", Collections.singletonMap("page", page));
-        });
-        app.get("/users/{id}", ctx -> {
-            int id = ctx.pathParamAsClass("id", Integer.class).get();
-            if (id > USERS.size()) {
-                throw new NotFoundResponse("User not found");
-            }
-            var page = new UserPage(USERS.stream().filter(x -> x.getId() == (long) id).toList().get(0));
-            ctx.render("users/show.jte", Collections.singletonMap("page", page));
+
         });
         // END
 
